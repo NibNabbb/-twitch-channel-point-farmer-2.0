@@ -1,0 +1,4 @@
+# Add streamer names on separate lines, like this:
+MattEU
+lirik
+shxtou
