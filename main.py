@@ -151,7 +151,13 @@ def download_profile_image(user_info, pfp_folder="pfp"):
         else:
             logging.error(f"Failed to download profile image for {streamer_name}. Status code: {response.status_code}")
 
-def check_live_status(twitch_auth, check_interval=10):
+def check_live_status(twitch_auth, check_interval=30):
+
+    # Check if interval is too small, avoid spamming Twitch servers.
+    if check_interval < 15:
+        print(f"[{get_timestamp()}] Interval has to be equal to or more than 15!")
+        exit()
+
     next_check_time = time.time()
 
     while True:
@@ -198,7 +204,7 @@ if __name__ == "__main__":
     streamers_file = "streamers.txt"
 
     if not os.path.exists(streamers_file):
-        print(f"{get_timestamp()} Creating {streamers_file} with default streamer names.")
+        print(f"[{get_timestamp()}] Open {streamers_file} to add your favorite streamers!")
         write_default_streamers(streamers_file)
         exit()
 

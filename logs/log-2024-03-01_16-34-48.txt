@@ -1,8 +1,0 @@
-[2024-03-01 16:34:49] (INFO): MattEU is live!
-[2024-03-01 16:34:50] (INFO): Downloaded profile image for matteu
-[2024-03-01 16:34:51] (INFO): shxtou is live!
-[2024-03-01 16:34:52] (INFO): Downloaded profile image for shxtou
-[2024-03-01 16:35:00] (INFO): MattEU is live!
-[2024-03-01 16:35:02] (INFO): shxtou is live!
-[2024-03-01 16:35:11] (INFO): MattEU is live!
-[2024-03-01 16:35:13] (INFO): shxtou is live!
