@@ -157,7 +157,7 @@ def browser_open(streamer_login, first_time_run):
     driver.get(f"https://www.twitch.tv/{streamer_login}")
     return False
 
-def check_live_status(twitch_auth, check_interval=30):
+def check_live_status(check_interval=30):
     # Check if interval is too small, avoid spamming Twitch servers.
     if check_interval < 15:
         print(f"[{get_timestamp()}] Interval has to be equal to or more than 15!")
@@ -199,12 +199,12 @@ def check_live_status(twitch_auth, check_interval=30):
                         if (len(driver.window_handles) == 1):
                             driver.quit()
                         else:
+                            driver.switch_to.window(f"{streamer_login} - Twitch")
                             print("idk what to do here..")
 
                     timestamp = get_timestamp()
                     message = f"{streamer_login} is not live."
                     print(f"[{timestamp}] {message}")
-                    print(len(driver.window_handles))
 
             # Update the next check time
             next_check_time = current_time + check_interval
@@ -213,6 +213,9 @@ def check_live_status(twitch_auth, check_interval=30):
         time.sleep(1)
 
 if __name__ == "__main__":
+    # Setup logging
+    setup_logging()
+
     # Twitch app credentials
     client_id = "hsgyiosq65o77sx5h34uxfmmwts0an"
     client_secret = "ysikujvxm4pzp1je10nccpaw4ylerx"
@@ -238,8 +241,5 @@ if __name__ == "__main__":
         write_default_streamers(streamers_file)
         exit()
 
-    # Setup logging
-    setup_logging()
-
     # Start the loop to check if the streamer is live
-    check_live_status(auth)
+    check_live_status()
