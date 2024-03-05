@@ -5,6 +5,7 @@ from datetime import datetime
 import logging
 import glob
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 
 class TwitchAuth:
     API_BASE_URL = "https://api.twitch.tv/helix"
@@ -179,9 +180,6 @@ def check_live_status(check_interval=30):
 
                 if streams_data and streams_data.get("data"):
                     timestamp = get_timestamp()
-                    message = f"{streamer_login} is live!"
-                    print(f"[{timestamp}] {message}")
-                    logging.info(message)
 
                     # Get user info to download profile image
                     user_info = auth.get_users_info(user_login=streamer_login)
@@ -189,22 +187,27 @@ def check_live_status(check_interval=30):
                         download_profile_image(user_info['data'][0])
                     
                     if not streamer_login in live_streamers:
+                        message = f"{streamer_login} is live!"
+                        print(f"[{timestamp}] {message}")
+                        logging.info(message)
+
                         live_streamers.append(streamer_login)
 
                         # You can add code here to open the browser or perform any other actions
                         first_time_run = browser_open(streamer_login, first_time_run)
                 else:
+                    timestamp = get_timestamp()
                     if streamer_login in live_streamers:
+                        message = f"{streamer_login} is not live."
+                        print(f"[{timestamp}] {message}")
+                        logging.info(message)
+
                         live_streamers.remove(streamer_login)
                         if (len(driver.window_handles) == 1):
                             driver.quit()
                         else:
                             driver.switch_to.window(f"{streamer_login} - Twitch")
                             print("idk what to do here..")
-
-                    timestamp = get_timestamp()
-                    message = f"{streamer_login} is not live."
-                    print(f"[{timestamp}] {message}")
 
             # Update the next check time
             next_check_time = current_time + check_interval
@@ -225,8 +228,11 @@ if __name__ == "__main__":
 
     # Create an instance of the browser driver
     options = webdriver.ChromeOptions()
+    options.add_argument(rf"--user-data-dir=C:\Users\{os.getenv("USERNAME")}\AppData\Local\Google\Chrome\User Data")
+    options.add_argument(r'--profile-directory=Profile 1')
     options.add_experimental_option("detach", True)
     options.add_argument("--start-maximized")
+    options.add_experimental_option("excludeSwitches", ['enable-automation'])
     driver = webdriver.Chrome(options=options)
     logging.info("Browser initiated!")
 
