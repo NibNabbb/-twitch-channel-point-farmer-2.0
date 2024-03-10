@@ -152,21 +152,47 @@ def download_profile_image(user_info, pfp_folder="pfp"):
         else:
             logging.error(f"Failed to download profile image for {streamer_name}. Status code: {response.status_code}")
 
-def browser_open(streamer_login, first_time_run):
+def init_browser():
+    options = webdriver.ChromeOptions()
+    options.add_argument(rf"--user-data-dir=C:\Users\{os.getenv('USERNAME')}\AppData\Local\Google\Chrome\User Data")
+    options.add_argument(r'--profile-directory=Profile 1')
+    options.add_experimental_option("detach", True)
+    options.add_argument("--start-maximized")
+    options.add_experimental_option("excludeSwitches", ['enable-automation', 'enable-logging'])
+    return webdriver.Chrome(options=options)
+
+first_time_run = True
+def browser_open(streamer_login):
+    global driver
+    global first_time_run
+
     if not first_time_run:
         driver.switch_to.new_window('tab')
     driver.get(f"https://www.twitch.tv/{streamer_login}")
-    return False
+    first_time_run = False
+    return driver.current_window_handle
 
-def check_live_status(check_interval=30):
-    # Check if interval is too small, avoid spamming Twitch servers.
+def check_browser_open():
+    global driver
+
+    try:
+        # Check if the driver is still open and has at least one window handle
+        return driver and driver.window_handles
+    except Exception:
+        return False
+
+def check_live_status(check_interval=15):
+    global driver
+    global first_time_run
+
+    # Check if the interval is too small, avoid spamming Twitch servers.
     if check_interval < 15:
         print(f"[{get_timestamp()}] Interval has to be equal to or more than 15!")
         exit()
 
     next_check_time = time.time()
-    live_streamers = []
-    first_time_run = True
+    live_streamers = []  # List of dictionaries containing streamer info
+    recently_offline_streamers = []
 
     while True:
         current_time = time.time()
@@ -185,29 +211,51 @@ def check_live_status(check_interval=30):
                     user_info = auth.get_users_info(user_login=streamer_login)
                     if user_info and user_info.get("data"):
                         download_profile_image(user_info['data'][0])
-                    
-                    if not streamer_login in live_streamers:
+
+                    streamer_info = next((info for info in live_streamers if info['streamer_login'] == streamer_login), None)
+
+                    if not streamer_info:
+                        if not check_browser_open():
+                            first_time_run = True
+                            driver = init_browser()
+                            logging.info("Browser initiated!")
+
                         message = f"{streamer_login} is live!"
                         print(f"[{timestamp}] {message}")
                         logging.info(message)
 
-                        live_streamers.append(streamer_login)
+                        current_window_handle = browser_open(streamer_login)
 
-                        # You can add code here to open the browser or perform any other actions
-                        first_time_run = browser_open(streamer_login, first_time_run)
+                        live_streamers.append({'streamer_login': streamer_login, 'window_handle': current_window_handle})
+                    else:
+                        stream_window = next((info['window_handle'] for info in live_streamers if info['streamer_login'] == streamer_login), None)
+                        driver.switch_to.window(stream_window)
+
                 else:
                     timestamp = get_timestamp()
-                    if streamer_login in live_streamers:
-                        message = f"{streamer_login} is not live."
-                        print(f"[{timestamp}] {message}")
-                        logging.info(message)
+                    streamer_info = next((info for info in live_streamers if info['streamer_login'] == streamer_login), None)
 
-                        live_streamers.remove(streamer_login)
-                        if (len(driver.window_handles) == 1):
-                            driver.quit()
+                    if streamer_info:
+                        if streamer_info in recently_offline_streamers:
+                            message = f"{streamer_login} is not live."
+                            print(f"[{timestamp}] {message}")
+                            logging.info(message)
+
+                            live_streamers.remove(streamer_info)
+
+                            stream_window = streamer_info['window_handle']
+
+                            try:
+                                driver.switch_to.window(stream_window)
+                                driver.close()
+                                recently_offline_streamers.remove(streamer_info)
+                            except Exception:
+                                print(f"[{timestamp}] Could not close the tab for {streamer_login}!")
+                                logging.error(f"Could not close the tab for {streamer_login}!")
                         else:
-                            driver.switch_to.window(f"{streamer_login} - Twitch")
-                            print("idk what to do here..")
+                            print(f"[{timestamp}] Stream not found for {streamer_login}, retrying in {check_interval} seconds!")
+
+                            recently_offline_streamers.append(streamer_info)
 
             # Update the next check time
             next_check_time = current_time + check_interval
@@ -225,16 +273,6 @@ if __name__ == "__main__":
 
     # Create an instance of TwitchAuth
     auth = TwitchAuth(client_id, client_secret)
-
-    # Create an instance of the browser driver
-    options = webdriver.ChromeOptions()
-    options.add_argument(rf"--user-data-dir=C:\Users\{os.getenv("USERNAME")}\AppData\Local\Google\Chrome\User Data")
-    options.add_argument(r'--profile-directory=Profile 1')
-    options.add_experimental_option("detach", True)
-    options.add_argument("--start-maximized")
-    options.add_experimental_option("excludeSwitches", ['enable-automation'])
-    driver = webdriver.Chrome(options=options)
-    logging.info("Browser initiated!")
 
     # Authenticate to obtain the access token
     auth.authenticate()
