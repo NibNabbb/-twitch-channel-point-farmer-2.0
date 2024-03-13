@@ -250,8 +250,9 @@ def check_live_status(check_interval=15):
                                 driver.close()
                                 recently_offline_streamers.remove(streamer_info)
                             except Exception:
-                                print(f"[{timestamp}] Could not close the tab for {streamer_login}!")
-                                logging.error(f"Could not close the tab for {streamer_login}!")
+                                message = f"Could not close the tab for {streamer_login}!"
+                                print(f"[{timestamp}] {message}")
+                                logging.error(message)
                         else:
                             print(f"[{timestamp}] Stream not found for {streamer_login}, retrying in {check_interval} seconds!")
 
