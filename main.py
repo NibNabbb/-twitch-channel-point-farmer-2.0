@@ -213,6 +213,8 @@ def check_live_status(check_interval=15):
                         download_profile_image(user_info['data'][0])
 
                     streamer_info = next((info for info in live_streamers if info['streamer_login'] == streamer_login), None)
+                    if streamer_info in recently_offline_streamers:
+                        recently_offline_streamers.remove(streamer_info)
 
                     if not streamer_info:
                         if not check_browser_open():
