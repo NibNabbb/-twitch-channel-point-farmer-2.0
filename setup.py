@@ -9,7 +9,9 @@ def check_and_load_config():
         # Define the configuration dictionary with default values
         config_data = {
             "check_interval": 15,
-            "max_idle_duration": 300
+            "max_idle_duration": 300,
+            "notification": True,
+            "autofarming": True
         }
 
         # Write the configuration dictionary to a JSON file

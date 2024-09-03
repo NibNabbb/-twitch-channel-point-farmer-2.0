@@ -87,18 +87,20 @@ def check_stream_status():
                             if streamer_info in live_streamers:
                                 live_streamers.remove(streamer_info)
 
-                            if not check_browser_open(driver):
-                                first_time_run = True
-                                driver = init_browser()
-                            current_window_handle = stream_open(streamer_login)
-                            live_streamers.append({'streamer_login': streamer_login, 'window_handle': current_window_handle, 'open_in_browser': True})
+                            if config.get('autofarming'):
+                                if not check_browser_open(driver):
+                                    first_time_run = True
+                                    driver = init_browser()
+                                current_window_handle = stream_open(streamer_login)
+                                live_streamers.append({'streamer_login': streamer_login, 'window_handle': current_window_handle, 'open_in_browser': True})
                         
                         elif not streamer_info or not streamer_info['notification_sent']:
                             if streamer_info in live_streamers:
                                 live_streamers.remove(streamer_info)
 
-                            # Send a non-intrusive notification to user
-                            send_notification(user_info['data'][0], stream_title)
+                            if config.get('notification'):
+                                # Send a non-intrusive notification to user
+                                send_notification(user_info['data'][0], stream_title)
 
                             live_streamers.append({'streamer_login': streamer_login, 'open_in_browser': False, 'notification_sent': True})
 
