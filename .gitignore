@@ -1,3 +1,6 @@
+__pycache__
+.venv
+.env
 logs
 pfp
 streamers.txt
