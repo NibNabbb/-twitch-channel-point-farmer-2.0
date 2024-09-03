@@ -4,4 +4,4 @@ __pycache__
 logs
 pfp
 *.txt
-config.json
+*.json

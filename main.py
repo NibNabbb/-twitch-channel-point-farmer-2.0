@@ -12,7 +12,11 @@ from idle import check_idle_duration # Import idle detection functions
 from notification import send_notification # Import notification function
 
 def read_streamers_from_file():
-    filename=config.get('list')
+    try:
+        filename = config.get('active_list')
+    except NameError:
+        filename = "streamers.txt"
+
     streamers = []
 
     if os.path.exists(filename):
@@ -146,7 +150,13 @@ if __name__ == "__main__":
     logging = setup_logging()
 
     # Check base config
-    config = check_and_load_config()
+    minimum_check_interval = len(read_streamers_from_file()) * 5
+    if minimum_check_interval > 15:
+        default_check_interval = minimum_check_interval
+    else:
+        default_check_interval = 15
+        
+    config = check_and_load_config(default_check_interval)
 
     # Check environment variables
     check_env_vars()
@@ -158,7 +168,7 @@ if __name__ == "__main__":
     auth.authenticate()
 
     # Check if streamers list exists
-    streamers_file = config.get('list')
+    streamers_file = config.get('active_list')
     check_streamers_list(streamers_file)
 
     # Define global variables

@@ -2,17 +2,17 @@ import os
 import json
 import logging
 
-def check_and_load_config():
+def check_and_load_config(default_check_interval):
     filename = "config.json"
 
     if not os.path.exists(filename):
         # Define the configuration dictionary with default values
         config_data = {
-            "check_interval": 15,
+            "check_interval": default_check_interval,
             "max_idle_duration": 300,
             "notification": True,
             "autofarming": True,
-            "list": "streamers.txt"
+            "active_list": "streamers.txt"
         }
 
         # Write the configuration dictionary to a JSON file
