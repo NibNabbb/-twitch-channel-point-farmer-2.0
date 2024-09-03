@@ -1,9 +1,10 @@
 import os
+import logging
 
 def check_env_vars(timestamp):
     filename = ".env"
     if not os.path.exists(filename):
-        print(f"[{timestamp}] Open .env to set up your Twitch API credentials!")
+        logging.warn(f"Open .env to set up your Twitch API credentials!")
         empty_env = ["client_id = """,
                     "client_secret = """]
 
@@ -13,13 +14,13 @@ def check_env_vars(timestamp):
         exit()
 
     if not os.getenv("client_id") or not os.getenv("client_secret"):
-        print(f"[{timestamp}] client_id or client_secret empty. Open .env to set up your Twitch API credentials!")
+        logging.warn(f"client_id or client_secret empty. Open .env to set up your Twitch API credentials!")
         exit()
 
 
 def check_streamers_list(streamers_file, timestamp):
     if not os.path.exists(streamers_file):
-        print(f"[{timestamp}] Open {streamers_file} to add your favorite streamers!")
+        logging.info(f"Open {streamers_file} to add your favorite streamers!")
         default_streamers = ["# Add streamer names on separate lines, like this:",
                          "MattEU",
                          "lirik",

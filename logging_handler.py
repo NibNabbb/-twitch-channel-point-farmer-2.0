@@ -20,12 +20,27 @@ def setup_logging():
             os.remove(log_file)
 
     log_filename = f"log-{get_timestamp()}.log"
+    log_filepath = os.path.join(logs_folder, log_filename)
 
-    logging.basicConfig(
-        filename=os.path.join(logs_folder, log_filename),
-        level=logging.INFO,
-        format="[%(asctime)s] (%(levelname)s): %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S"
-    )
+    # Create a logger object
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
 
-    return logging
+    # Create file handler
+    file_handler = logging.FileHandler(log_filepath)
+    file_handler.setLevel(logging.INFO)
+
+    # Create console handler
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.INFO)
+
+    # Create a formatter and set it for both handlers
+    formatter = logging.Formatter("[%(asctime)s] (%(levelname)s): %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+    file_handler.setFormatter(formatter)
+    console_handler.setFormatter(formatter)
+
+    # Add the handlers to the logger
+    logger.addHandler(file_handler)
+    logger.addHandler(console_handler)
+
+    return logger

@@ -8,6 +8,7 @@ from browser import init_browser, check_browser_open  # Import browser functions
 from logging_handler import setup_logging, get_timestamp  # Import logging functions
 from twitchauth import TwitchAuth  # Import TwitchAuth class
 from setup import check_streamers_list, check_env_vars # Import setup functions
+from pfp import download_profile_image  # Import pfp download function
 
 def read_streamers_from_file(filename="streamers.txt"):
     streamers = []
@@ -20,24 +21,6 @@ def read_streamers_from_file(filename="streamers.txt"):
                     streamers.append(line.strip())
 
     return streamers
-
-def download_profile_image(user_info, pfp_folder="pfp"):
-    if not os.path.exists(pfp_folder):
-        os.makedirs(pfp_folder)
-
-    streamer_name = user_info['login']
-    profile_image_path = os.path.join(pfp_folder, f"profile_image_{streamer_name}.png")
-
-    if not os.path.exists(profile_image_path):
-        profile_image_url = user_info['profile_image_url']
-        response = requests.get(profile_image_url)
-
-        if response.status_code == 200:
-            with open(profile_image_path, 'wb') as img_file:
-                img_file.write(response.content)
-                logging.info(f"Downloaded profile image for {streamer_name}")
-        else:
-            logging.error(f"Failed to download profile image for {streamer_name}. Status code: {response.status_code}")
 
 def stream_open(streamer_login):
     global driver
@@ -56,10 +39,10 @@ def check_stream_status(check_interval=20):
     # Check if the interval is too small, avoid spamming Twitch servers as well as giving browser tabs time to load.
     minimum_check_interval = len(read_streamers_from_file(streamers_file)) * 5
     if check_interval < 15:
-        print(f"[{get_timestamp()}] Interval has to be equal to or more than 15!")
+        logging.error("Interval has to be equal to or more than 15!")
         exit()
     elif check_interval < minimum_check_interval:
-        print(f"[{get_timestamp()}] Interval has to be equal to or more than {minimum_check_interval}!")
+        logging.error("Interval has to be equal to or more than {minimum_check_interval}!")
         exit()
 
     next_check_time = time.time()
@@ -94,9 +77,7 @@ def check_stream_status(check_interval=20):
                             driver = init_browser()
                             logging.info("Browser initiated!")
 
-                        message = f"{streamer_login} is live!"
-                        print(f"[{timestamp}] {message}")
-                        logging.info(message)
+                        logging.info(f"{streamer_login} is live!")
 
                         current_window_handle = stream_open(streamer_login)
 
@@ -111,9 +92,7 @@ def check_stream_status(check_interval=20):
 
                     if streamer_info:
                         if streamer_info in recently_offline_streamers:
-                            message = f"{streamer_login} is not live."
-                            print(f"[{timestamp}] {message}")
-                            logging.info(message)
+                            logging.info(f"{streamer_login} is not live.")
 
                             live_streamers.remove(streamer_info)
 
@@ -124,11 +103,9 @@ def check_stream_status(check_interval=20):
                                 driver.close()
                                 recently_offline_streamers.remove(streamer_info)
                             except Exception:
-                                message = f"Could not close the tab for {streamer_login}!"
-                                print(f"[{timestamp}] {message}")
-                                logging.error(message)
+                                logging.error(f"Could not close the tab for {streamer_login}!")
                         else:
-                            print(f"[{timestamp}] Stream not found for {streamer_login}, retrying in {check_interval} seconds!")
+                            logging.info(f"Stream not found for {streamer_login}, retrying in {check_interval} seconds!")
 
                             recently_offline_streamers.append(streamer_info)
 
@@ -149,7 +126,7 @@ if __name__ == "__main__":
     check_env_vars(get_timestamp())
 
     # Create an instance of TwitchAuth
-    auth = TwitchAuth(os.getenv("client_id"), os.getenv("client_secret"), logging=logging)
+    auth = TwitchAuth(os.getenv("client_id"), os.getenv("client_secret"))
 
     # Authenticate to obtain the access token
     auth.authenticate()

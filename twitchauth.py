@@ -1,17 +1,17 @@
 import requests
+import logging
 
 class TwitchAuth:
     API_BASE_URL = "https://api.twitch.tv/helix"
     OAUTH_URL = "https://id.twitch.tv/oauth2/token"
 
-    def __init__(self, client_id, client_secret, grant_type="client_credentials", logging=None):
+    def __init__(self, client_id, client_secret, grant_type="client_credentials"):
         self.client_id = client_id
         self.client_secret = client_secret
         self.grant_type = grant_type
         self.access_token = None
         self.expires_in = None
         self.token_type = None
-        self.logging = logging
 
     def authenticate(self):
         data = {
@@ -24,7 +24,7 @@ class TwitchAuth:
             response = requests.post(self.OAUTH_URL, data=data)
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
-            self.logging.error(f"Error during authentication: {str(e)}")
+            logging.error(f"Error during authentication: {str(e)}")
             return
 
         response_json = response.json()
@@ -55,7 +55,7 @@ class TwitchAuth:
             response = requests.get(url, params=params, headers=headers)
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
-            self.logging.error(f"Error getting live streams: {str(e)}")
+            logging.error(f"Error getting live streams: {str(e)}")
             return None
 
         return response.json()
@@ -77,7 +77,7 @@ class TwitchAuth:
             response = requests.get(url, params=params, headers=headers)
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
-            self.logging.error(f"Error getting user info: {str(e)}")
+            logging.error(f"Error getting user info: {str(e)}")
             return None
 
         return response.json()
