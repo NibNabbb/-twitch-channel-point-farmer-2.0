@@ -3,115 +3,18 @@ import requests
 import time
 from datetime import datetime
 import logging
-import glob
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
+from browser import init_browser, check_browser_open  # Import browser functions
+from dotenv import load_dotenv
+from logging_handler import setup_logging, get_timestamp  # Import logging functions
+from twitchauth import TwitchAuth  # Import TwitchAuth class
 
-class TwitchAuth:
-    API_BASE_URL = "https://api.twitch.tv/helix"
-    OAUTH_URL = "https://id.twitch.tv/oauth2/token"
+# Load environment variables from .env file
+load_dotenv()
 
-    def __init__(self, client_id, client_secret, grant_type="client_credentials"):
-        self.client_id = client_id
-        self.client_secret = client_secret
-        self.grant_type = grant_type
-        self.access_token = None
-        self.expires_in = None
-        self.token_type = None
-
-    def authenticate(self):
-        data = {
-            "client_id": self.client_id,
-            "client_secret": self.client_secret,
-            "grant_type": self.grant_type
-        }
-
-        try:
-            response = requests.post(self.OAUTH_URL, data=data)
-            response.raise_for_status()
-        except requests.exceptions.RequestException as e:
-            logging.error(f"Error during authentication: {str(e)}")
-            return
-
-        response_json = response.json()
-        self.access_token = response_json["access_token"]
-        self.expires_in = response_json["expires_in"]
-        self.token_type = response_json["token_type"]
-
-    def get_live_streams(self, user_id=None, user_login=None, game_id=None, stream_type="all", language=None, limit=20, before=None, after=None):
-        url = f"{self.API_BASE_URL}/streams"
-
-        params = {
-            "user_id": user_id,
-            "user_login": user_login,
-            "game_id": game_id,
-            "type": stream_type,
-            "language": language,
-            "first": limit,
-            "before": before,
-            "after": after
-        }
-
-        headers = {
-            "Client-ID": self.client_id,
-            "Authorization": f"Bearer {self.access_token}"
-        }
-
-        try:
-            response = requests.get(url, params=params, headers=headers)
-            response.raise_for_status()
-        except requests.exceptions.RequestException as e:
-            logging.error(f"Error getting live streams: {str(e)}")
-            return None
-
-        return response.json()
-
-    def get_users_info(self, user_id=None, user_login=None):
-        url = f"{self.API_BASE_URL}/users"
-
-        params = {
-            "id": user_id,
-            "login": user_login
-        }
-
-        headers = {
-            "Client-ID": self.client_id,
-            "Authorization": f"Bearer {self.access_token}"
-        }
-
-        try:
-            response = requests.get(url, params=params, headers=headers)
-            response.raise_for_status()
-        except requests.exceptions.RequestException as e:
-            logging.error(f"Error getting user info: {str(e)}")
-            return None
-
-        return response.json()
-
-def get_timestamp():
-    return datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-
-def setup_logging():
-    logs_folder = "logs"
-    if not os.path.exists(logs_folder):
-        os.makedirs(logs_folder)
-
-    # Remove older log files, keeping only the three most recent ones
-    existing_logs = sorted(glob.glob(os.path.join(logs_folder, "log-*.log")), key=os.path.getctime, reverse=True)
-    logs_to_keep = existing_logs[:2]
-
-    for log_file in existing_logs:
-        if log_file not in logs_to_keep:
-            os.remove(log_file)
-
-    log_filename = f"log-{get_timestamp()}.log"
-
-    logging.basicConfig(
-        filename=os.path.join(logs_folder, log_filename),
-        level=logging.INFO,
-        format="[%(asctime)s] (%(levelname)s): %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S"
-    )
+# Create an instance of TwitchAuth
+client_id = os.getenv("client_id")
+client_secret = os.getenv("client_secret")
+auth = TwitchAuth(client_id, client_secret, logging=logging)
 
 def read_streamers_from_file(filename="streamers.txt"):
     streamers = []
@@ -152,16 +55,6 @@ def download_profile_image(user_info, pfp_folder="pfp"):
         else:
             logging.error(f"Failed to download profile image for {streamer_name}. Status code: {response.status_code}")
 
-def init_browser():
-    options = webdriver.ChromeOptions()
-    options.add_argument(rf"--user-data-dir=C:\Users\{os.getenv('USERNAME')}\AppData\Local\Google\Chrome\User Data")
-    options.add_argument(r'--profile-directory=Profile 1')
-    options.add_experimental_option("detach", True)
-    options.add_argument("--start-maximized")
-    options.add_experimental_option("excludeSwitches", ['enable-automation', 'enable-logging'])
-    return webdriver.Chrome(options=options)
-
-first_time_run = True
 def browser_open(streamer_login):
     global driver
     global first_time_run
@@ -171,15 +64,6 @@ def browser_open(streamer_login):
     driver.get(f"https://www.twitch.tv/{streamer_login}")
     first_time_run = False
     return driver.current_window_handle
-
-def check_browser_open():
-    global driver
-
-    try:
-        # Check if the driver is still open and has at least one window handle
-        return driver and driver.window_handles
-    except Exception:
-        return False
 
 def check_live_status(check_interval=15):
     global driver
@@ -217,7 +101,7 @@ def check_live_status(check_interval=15):
                         recently_offline_streamers.remove(streamer_info)
 
                     if not streamer_info:
-                        if not check_browser_open():
+                        if not check_browser_open(driver):
                             first_time_run = True
                             driver = init_browser()
                             logging.info("Browser initiated!")
@@ -268,14 +152,7 @@ def check_live_status(check_interval=15):
 
 if __name__ == "__main__":
     # Setup logging
-    setup_logging()
-
-    # Twitch app credentials
-    client_id = "hsgyiosq65o77sx5h34uxfmmwts0an"
-    client_secret = "ysikujvxm4pzp1je10nccpaw4ylerx"
-
-    # Create an instance of TwitchAuth
-    auth = TwitchAuth(client_id, client_secret)
+    logging = setup_logging()
 
     # Authenticate to obtain the access token
     auth.authenticate()
@@ -287,6 +164,10 @@ if __name__ == "__main__":
         print(f"[{get_timestamp()}] Open {streamers_file} to add your favorite streamers!")
         write_default_streamers(streamers_file)
         exit()
+
+    # Define global variables
+    driver = None
+    first_time_run = True
 
     # Start the loop to check if the streamer is live
     check_live_status()
