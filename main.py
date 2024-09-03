@@ -11,7 +11,8 @@ from pfp import download_profile_image  # Import pfp download function
 from idle import check_idle_duration # Import idle detection functions
 from notification import send_notification # Import notification function
 
-def read_streamers_from_file(filename="streamers.txt"):
+def read_streamers_from_file():
+    filename=config.get('list')
     streamers = []
 
     if os.path.exists(filename):
@@ -40,7 +41,7 @@ def check_stream_status():
     check_interval = config.get('check_interval')
 
     # Check if the interval is too small, avoid spamming Twitch servers as well as giving browser tabs time to load.
-    minimum_check_interval = len(read_streamers_from_file(streamers_file)) * 5
+    minimum_check_interval = len(read_streamers_from_file()) * 5
     if check_interval < 15:
         logging.error("Interval has to be equal to or more than 15!")
         exit()
@@ -60,7 +61,7 @@ def check_stream_status():
 
         if current_time >= next_check_time:
             # Read streamer names from "streamers.txt"
-            streamers = read_streamers_from_file(streamers_file)
+            streamers = read_streamers_from_file()
 
             for streamer_login in streamers:
                 streams_data = auth.get_live_streams(user_login=streamer_login)
@@ -157,7 +158,7 @@ if __name__ == "__main__":
     auth.authenticate()
 
     # Check if streamers list exists
-    streamers_file = "streamers.txt"
+    streamers_file = config.get('list')
     check_streamers_list(streamers_file)
 
     # Define global variables

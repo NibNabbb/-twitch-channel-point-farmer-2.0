@@ -11,7 +11,8 @@ def check_and_load_config():
             "check_interval": 15,
             "max_idle_duration": 300,
             "notification": True,
-            "autofarming": True
+            "autofarming": True,
+            "list": "streamers.txt"
         }
 
         # Write the configuration dictionary to a JSON file
