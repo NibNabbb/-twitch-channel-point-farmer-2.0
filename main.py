@@ -42,7 +42,7 @@ def check_stream_status(check_interval=20):
         logging.error("Interval has to be equal to or more than 15!")
         exit()
     elif check_interval < minimum_check_interval:
-        logging.error("Interval has to be equal to or more than {minimum_check_interval}!")
+        logging.error(f"Interval has to be equal to or more than {minimum_check_interval}!")
         exit()
 
     next_check_time = time.time()
