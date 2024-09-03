@@ -3,3 +3,4 @@ datetime
 logging
 selenium
 python-dotenv
+winotify

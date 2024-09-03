@@ -29,6 +29,7 @@
 #⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠑⠒⠤⠞⠻⠦⢄⡟⠋⠒⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 
 import os
+import logging
 from selenium import webdriver
 
 def init_browser():
@@ -38,6 +39,7 @@ def init_browser():
     options.add_experimental_option("detach", True)
     options.add_argument("--start-maximized")
     options.add_experimental_option("excludeSwitches", ['enable-automation', 'enable-logging'])
+    logging.info("Browser initiated!")
     return webdriver.Chrome(options=options)
 
 def check_browser_open(driver):
