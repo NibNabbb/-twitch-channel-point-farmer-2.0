@@ -5,7 +5,7 @@ import logging
 from dotenv import load_dotenv
 
 from browser import init_browser, check_browser_open  # Import browser functions
-from logging_handler import setup_logging, get_timestamp  # Import logging functions
+from logging_handler import setup_logging  # Import logging function
 from twitchauth import TwitchAuth  # Import TwitchAuth class
 from setup import check_streamers_list, check_env_vars # Import setup functions
 from pfp import download_profile_image  # Import pfp download function
@@ -60,8 +60,6 @@ def check_stream_status(check_interval=20):
                 streams_data = auth.get_live_streams(user_login=streamer_login)
 
                 if streams_data and streams_data.get("data"):
-                    timestamp = get_timestamp()
-
                     # Get user info to download profile image
                     user_info = auth.get_users_info(user_login=streamer_login)
                     if user_info and user_info.get("data"):
@@ -87,7 +85,6 @@ def check_stream_status(check_interval=20):
                         driver.switch_to.window(stream_window)
 
                 else:
-                    timestamp = get_timestamp()
                     streamer_info = next((info for info in live_streamers if info['streamer_login'] == streamer_login), None)
 
                     if streamer_info:
@@ -123,7 +120,7 @@ if __name__ == "__main__":
     logging = setup_logging()
 
     # Check environment variables
-    check_env_vars(get_timestamp())
+    check_env_vars()
 
     # Create an instance of TwitchAuth
     auth = TwitchAuth(os.getenv("client_id"), os.getenv("client_secret"))
@@ -133,7 +130,7 @@ if __name__ == "__main__":
 
     # Check if streamers list exists
     streamers_file = "streamers.txt"
-    check_streamers_list(streamers_file, get_timestamp())
+    check_streamers_list(streamers_file)
 
     # Define global variables
     driver = None
