@@ -15,6 +15,3 @@ def check_idle_duration():
     millis = windll.kernel32.GetTickCount() - lastInputInfo.dwTime
     logging.debug(millis / 1000.0)
     return millis / 1000.0
-
-# Set the maximum idle duration (in seconds) for the script to run
-max_idle_duration = 5  # Adjust as needed

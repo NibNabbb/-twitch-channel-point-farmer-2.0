@@ -1,5 +1,26 @@
 import os
+import json
 import logging
+
+def check_and_load_config():
+    filename = "config.json"
+
+    if not os.path.exists(filename):
+        # Define the configuration dictionary with default values
+        config_data = {
+            "check_interval": 15,
+            "max_idle_duration": 300
+        }
+
+        # Write the configuration dictionary to a JSON file
+        with open(filename, 'w') as file:
+            json.dump(config_data, file, indent=4)
+
+        logging.info(f"{filename} created successfully with default values.")
+    
+    with open(filename, 'r') as file:
+        config = json.load(file)
+    return config
 
 def check_env_vars():
     filename = ".env"

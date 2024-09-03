@@ -6,9 +6,9 @@ from dotenv import load_dotenv
 from browser import init_browser, check_browser_open  # Import browser functions
 from logging_handler import setup_logging  # Import logging function
 from twitchauth import TwitchAuth  # Import TwitchAuth class
-from setup import check_streamers_list, check_env_vars # Import setup functions
+from setup import check_and_load_config, check_streamers_list, check_env_vars # Import setup functions
 from pfp import download_profile_image  # Import pfp download function
-from idle import check_idle_duration, max_idle_duration # Import idle detection functions
+from idle import check_idle_duration # Import idle detection functions
 from notification import send_notification # Import notification function
 
 def read_streamers_from_file(filename="streamers.txt"):
@@ -33,9 +33,11 @@ def stream_open(streamer_login):
     first_time_run = False
     return driver.current_window_handle
 
-def check_stream_status(check_interval=20):
+def check_stream_status():
     global driver
     global first_time_run
+
+    check_interval = config.get('check_interval')
 
     # Check if the interval is too small, avoid spamming Twitch servers as well as giving browser tabs time to load.
     minimum_check_interval = len(read_streamers_from_file(streamers_file)) * 5
@@ -81,7 +83,7 @@ def check_stream_status(check_interval=20):
                         if not streamer_info in live_streamers:
                             logging.info(f"{streamer_login} is live!")
 
-                        if idle_duration > max_idle_duration:
+                        if idle_duration > config.get('max_idle_duration'):
                             if streamer_info in live_streamers:
                                 live_streamers.remove(streamer_info)
 
@@ -95,9 +97,8 @@ def check_stream_status(check_interval=20):
                             if streamer_info in live_streamers:
                                 live_streamers.remove(streamer_info)
 
-                            # Code to send notification to user
+                            # Send a non-intrusive notification to user
                             send_notification(user_info['data'][0], stream_title)
-
 
                             live_streamers.append({'streamer_login': streamer_login, 'open_in_browser': False, 'notification_sent': True})
 
@@ -140,6 +141,9 @@ if __name__ == "__main__":
 
     # Setup logging
     logging = setup_logging()
+
+    # Check base config
+    config = check_and_load_config()
 
     # Check environment variables
     check_env_vars()
