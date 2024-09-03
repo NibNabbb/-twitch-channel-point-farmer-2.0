@@ -1,20 +1,13 @@
 import os
 import requests
 import time
-from datetime import datetime
 import logging
-from browser import init_browser, check_browser_open  # Import browser functions
 from dotenv import load_dotenv
+
+from browser import init_browser, check_browser_open  # Import browser functions
 from logging_handler import setup_logging, get_timestamp  # Import logging functions
 from twitchauth import TwitchAuth  # Import TwitchAuth class
-
-# Load environment variables from .env file
-load_dotenv()
-
-# Create an instance of TwitchAuth
-client_id = os.getenv("client_id")
-client_secret = os.getenv("client_secret")
-auth = TwitchAuth(client_id, client_secret, logging=logging)
+from setup import check_streamers_list, check_env_vars # Import setup functions
 
 def read_streamers_from_file(filename="streamers.txt"):
     streamers = []
@@ -27,15 +20,6 @@ def read_streamers_from_file(filename="streamers.txt"):
                     streamers.append(line.strip())
 
     return streamers
-
-def write_default_streamers(filename="streamers.txt"):
-    default_streamers = ["# Add streamer names on separate lines, like this:",
-                         "MattEU",
-                         "lirik",
-                         "shxtou"]
-
-    with open(filename, "w") as file:
-        file.write("\n".join(default_streamers))
 
 def download_profile_image(user_info, pfp_folder="pfp"):
     if not os.path.exists(pfp_folder):
@@ -151,19 +135,24 @@ def check_live_status(check_interval=15):
         time.sleep(1)
 
 if __name__ == "__main__":
+    # Load environment variables from .env file
+    load_dotenv()
+
     # Setup logging
     logging = setup_logging()
+
+    # Check environment variables
+    check_env_vars(get_timestamp())
+
+    # Create an instance of TwitchAuth
+    auth = TwitchAuth(os.getenv("client_id"), os.getenv("client_secret"), logging=logging)
 
     # Authenticate to obtain the access token
     auth.authenticate()
 
-    # Check if "streamers.txt" exists
+    # Check if streamers list exists
     streamers_file = "streamers.txt"
-
-    if not os.path.exists(streamers_file):
-        print(f"[{get_timestamp()}] Open {streamers_file} to add your favorite streamers!")
-        write_default_streamers(streamers_file)
-        exit()
+    check_streamers_list(streamers_file, get_timestamp())
 
     # Define global variables
     driver = None
