@@ -1,5 +1,4 @@
 import os
-import requests
 import time
 import logging
 from dotenv import load_dotenv
@@ -9,6 +8,8 @@ from logging_handler import setup_logging  # Import logging function
 from twitchauth import TwitchAuth  # Import TwitchAuth class
 from setup import check_streamers_list, check_env_vars # Import setup functions
 from pfp import download_profile_image  # Import pfp download function
+from idle import check_idle_duration, max_idle_duration # Import idle detection functions
+from notification import send_notification # Import notification function
 
 def read_streamers_from_file(filename="streamers.txt"):
     streamers = []
@@ -52,6 +53,9 @@ def check_stream_status(check_interval=20):
     while True:
         current_time = time.time()
 
+        # Check user inactivity
+        idle_duration = check_idle_duration()
+
         if current_time >= next_check_time:
             # Read streamer names from "streamers.txt"
             streamers = read_streamers_from_file(streamers_file)
@@ -66,20 +70,37 @@ def check_stream_status(check_interval=20):
                         download_profile_image(user_info['data'][0])
 
                     streamer_info = next((info for info in live_streamers if info['streamer_login'] == streamer_login), None)
+
                     if streamer_info in recently_offline_streamers:
                         recently_offline_streamers.remove(streamer_info)
 
-                    if not streamer_info:
-                        if not check_browser_open(driver):
-                            first_time_run = True
-                            driver = init_browser()
-                            logging.info("Browser initiated!")
+                    if not streamer_info or not streamer_info['open_in_browser']:
+                        for stream in streams_data["data"]:
+                            stream_title = stream['title']
+                        
+                        if not streamer_info in live_streamers:
+                            logging.info(f"{streamer_login} is live!")
 
-                        logging.info(f"{streamer_login} is live!")
+                        if idle_duration > max_idle_duration:
+                            if streamer_info in live_streamers:
+                                live_streamers.remove(streamer_info)
 
-                        current_window_handle = stream_open(streamer_login)
+                            if not check_browser_open(driver):
+                                first_time_run = True
+                                driver = init_browser()
+                            current_window_handle = stream_open(streamer_login)
+                            live_streamers.append({'streamer_login': streamer_login, 'window_handle': current_window_handle, 'open_in_browser': True})
+                        
+                        elif not streamer_info or not streamer_info['notification_sent']:
+                            if streamer_info in live_streamers:
+                                live_streamers.remove(streamer_info)
 
-                        live_streamers.append({'streamer_login': streamer_login, 'window_handle': current_window_handle})
+                            # Code to send notification to user
+                            send_notification(user_info['data'][0], stream_title)
+
+
+                            live_streamers.append({'streamer_login': streamer_login, 'open_in_browser': False, 'notification_sent': True})
+
                     else:
                         stream_window = next((info['window_handle'] for info in live_streamers if info['streamer_login'] == streamer_login), None)
                         driver.switch_to.window(stream_window)
@@ -95,12 +116,13 @@ def check_stream_status(check_interval=20):
 
                             stream_window = streamer_info['window_handle']
 
-                            try:
-                                driver.switch_to.window(stream_window)
-                                driver.close()
-                                recently_offline_streamers.remove(streamer_info)
-                            except Exception:
-                                logging.error(f"Could not close the tab for {streamer_login}!")
+                            if stream_window:
+                                try:
+                                    driver.switch_to.window(stream_window)
+                                    driver.close()
+                                    recently_offline_streamers.remove(streamer_info)
+                                except Exception:
+                                    logging.error(f"Could not close the tab for {streamer_login}!")
                         else:
                             logging.info(f"Stream not found for {streamer_login}, retrying in {check_interval} seconds!")
 
