@@ -39,7 +39,7 @@ def download_profile_image(user_info, pfp_folder="pfp"):
         else:
             logging.error(f"Failed to download profile image for {streamer_name}. Status code: {response.status_code}")
 
-def browser_open(streamer_login):
+def stream_open(streamer_login):
     global driver
     global first_time_run
 
@@ -49,13 +49,17 @@ def browser_open(streamer_login):
     first_time_run = False
     return driver.current_window_handle
 
-def check_live_status(check_interval=15):
+def check_stream_status(check_interval=20):
     global driver
     global first_time_run
 
-    # Check if the interval is too small, avoid spamming Twitch servers.
+    # Check if the interval is too small, avoid spamming Twitch servers as well as giving browser tabs time to load.
+    minimum_check_interval = len(read_streamers_from_file(streamers_file)) * 5
     if check_interval < 15:
         print(f"[{get_timestamp()}] Interval has to be equal to or more than 15!")
+        exit()
+    elif check_interval < minimum_check_interval:
+        print(f"[{get_timestamp()}] Interval has to be equal to or more than {minimum_check_interval}!")
         exit()
 
     next_check_time = time.time()
@@ -94,7 +98,7 @@ def check_live_status(check_interval=15):
                         print(f"[{timestamp}] {message}")
                         logging.info(message)
 
-                        current_window_handle = browser_open(streamer_login)
+                        current_window_handle = stream_open(streamer_login)
 
                         live_streamers.append({'streamer_login': streamer_login, 'window_handle': current_window_handle})
                     else:
@@ -159,4 +163,4 @@ if __name__ == "__main__":
     first_time_run = True
 
     # Start the loop to check if the streamer is live
-    check_live_status()
+    check_stream_status()
