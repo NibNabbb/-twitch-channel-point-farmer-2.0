@@ -89,6 +89,8 @@ def first_time_setup():
 
         if check_interval == "":
             check_interval = default_check_interval
+        else:
+            int(check_interval)
 
         print()
         print("Alright. Next up is the max idle duration. This is the ammount of time in seconds of inactivity before the computer is considered 'idle'.")
@@ -107,7 +109,7 @@ def first_time_setup():
         notification = input()
         if notification == "y" or notification == "yes":
             notification = True
-        if notification == "n" or notification == "no":
+        elif notification == "n" or notification == "no":
             notification = False
         else:
             print("Invalid syntax. Defaulting to yes.")
@@ -125,7 +127,7 @@ def first_time_setup():
         autofarming = input()
         if autofarming == "y" or autofarming == "yes":
             autofarming = True
-        if autofarming == "n" or autofarming == "no":
+        elif autofarming == "n" or autofarming == "no":
             autofarming = False
         else:
             print("Invalid syntax. Defaulting to yes.")
