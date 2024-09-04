@@ -15,9 +15,8 @@ def first_time_setup():
     if os.path.exists("config.json"):
         with open("config.json", 'r') as file:
             config = json.load(file)
-    try:
         streamers_file = config.get('active_list')
-    except NameError:
+    else:
         streamers_file = "streamers.txt"
 
     # Step 1: Introduction
@@ -115,7 +114,7 @@ def first_time_setup():
             notification = True
         
         print()
-        print ("Ok. next up, do you want to enable autofarming? This allows the script to open up chrome and 'watch' the streams when the streamers are live and the computer is 'idle'.")
+        print ("Ok. next up, autofarming. This allows the script to open up chrome and 'watch' the streams when the streamers are live and the computer is 'idle'.")
         time.sleep(2)
         print("This allows the script to 'farm' channel points while you're away. (for legal reasons, this is a joke. please don't ban me twitch.)")
         time.sleep(2)
