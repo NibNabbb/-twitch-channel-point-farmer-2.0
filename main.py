@@ -6,27 +6,11 @@ from dotenv import load_dotenv
 from browser import init_browser, check_browser_open  # Import browser functions
 from logging_handler import setup_logging  # Import logging function
 from twitchauth import TwitchAuth  # Import TwitchAuth class
-from setup import check_and_load_config, check_streamers_list, check_env_vars # Import setup functions
+from setup import first_time_setup, check_and_load_config, check_streamers_list, check_env_vars # Import setup functions
 from pfp import download_profile_image  # Import pfp download function
 from idle import check_idle_duration # Import idle detection functions
 from notification import send_notification # Import notification function
-
-def read_streamers_from_file():
-    try:
-        filename = config.get('active_list')
-    except NameError:
-        filename = "streamers.txt"
-
-    streamers = []
-
-    if os.path.exists(filename):
-        with open(filename, "r") as file:
-            for line in file:
-                # Ignore comments and empty lines
-                if line.strip() and not line.startswith("#"):
-                    streamers.append(line.strip())
-
-    return streamers
+from streamers import read_streamers_from_file # Import list reading functions
 
 def stream_open(streamer_login):
     global driver
@@ -45,7 +29,7 @@ def check_stream_status():
     check_interval = config.get('check_interval')
 
     # Check if the interval is too small, avoid spamming Twitch servers as well as giving browser tabs time to load.
-    minimum_check_interval = len(read_streamers_from_file()) * 5
+    minimum_check_interval = len(read_streamers_from_file(config.get('active_list'))) * 5
     if check_interval < 15:
         logging.error("Interval has to be equal to or more than 15!")
         exit()
@@ -65,7 +49,7 @@ def check_stream_status():
 
         if current_time >= next_check_time:
             # Read streamer names from "streamers.txt"
-            streamers = read_streamers_from_file()
+            streamers = read_streamers_from_file(config.get('active_list'))
 
             for streamer_login in streamers:
                 streams_data = auth.get_live_streams(user_login=streamer_login)
@@ -149,14 +133,11 @@ if __name__ == "__main__":
     # Setup logging
     logging = setup_logging()
 
-    # Check base config
-    minimum_check_interval = len(read_streamers_from_file()) * 5
-    if minimum_check_interval > 15:
-        default_check_interval = minimum_check_interval
-    else:
-        default_check_interval = 15
-        
-    config = check_and_load_config(default_check_interval)
+    # Load first time setup
+    first_time_setup()
+
+    # Check base config        
+    config = check_and_load_config()
 
     # Check environment variables
     check_env_vars()
