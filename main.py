@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import logging
+import msvcrt
 from dotenv import load_dotenv
 
 from browser import init_browser, check_browser_open  # Import browser functions
@@ -33,9 +34,13 @@ def check_stream_status():
     minimum_check_interval = len(read_streamers_from_file(config.get('active_list'))) * 5
     if check_interval < 15:
         logging.error("Interval has to be equal to or more than 15!")
+        print("Press any key to continue...")
+        msvcrt.getch()
         sys.exit()
     elif check_interval < minimum_check_interval:
         logging.error(f"Interval has to be equal to or more than {minimum_check_interval}!")
+        print("Press any key to continue...")
+        msvcrt.getch()
         sys.exit()
 
     next_check_time = time.time()
