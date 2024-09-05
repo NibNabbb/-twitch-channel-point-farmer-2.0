@@ -1,7 +1,10 @@
 __pycache__
+build
+dist
 .venv
 .env
 logs
 pfp
 *.txt
 *.json
+*.spec
