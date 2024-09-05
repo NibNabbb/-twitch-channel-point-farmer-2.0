@@ -1,6 +1,7 @@
 # https://youtu.be/N3zf9q8mbWs?si=LyPk33lLR7qvRGPA
 
 import os
+import sys
 import json
 import logging
 import time
@@ -32,7 +33,7 @@ def first_time_setup():
     # Step 1: Fail condition
     if os.getenv("client_id") == "" or os.getenv("client_secret") == "":
         print("Seems like you forgot to enther the Twitch API credentials into the .env file. Once you've done that, you can proceed with the setup.")
-        exit()
+        sys.exit()
 
     # Step 2: Streamer list
     if not os.path.exists(streamers_file):
@@ -157,7 +158,7 @@ def check_and_load_config():
 
     if not os.path.exists(filename):
         logging.error("config.json could not be found!")
-        exit()
+        sys.exit()
     
     with open(filename, 'r') as file:
         config = json.load(file)
@@ -173,11 +174,11 @@ def check_env_vars(fts = False):
         with open(".env", "w") as env:
             env.write("\n".join(empty_env))
 
-        exit()
+        sys.exit()
 
     if not os.getenv("client_id") or not os.getenv("client_secret"):
         logging.warn(f"client_id or client_secret empty. Open .env to set up your Twitch API credentials!")
-        exit()
+        sys.exit()
 
 
 def check_streamers_list(streamers_file, fts = False):
@@ -191,4 +192,4 @@ def check_streamers_list(streamers_file, fts = False):
         with open(streamers_file, "w") as file:
             file.write("\n".join(default_streamers))
 
-        exit()
+        sys.exit()
