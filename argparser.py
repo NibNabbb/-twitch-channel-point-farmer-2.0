@@ -1,6 +1,6 @@
 import argparse
 
-def chackargs():
+def parseargs():
     # Create the parser
     parser = argparse.ArgumentParser("Twitch Channel Point Farmer 2.0")
 
