@@ -13,6 +13,7 @@ from pfp import download_profile_image  # Import pfp download function
 from idle import check_idle_duration # Import idle detection functions
 from notification import send_notification # Import notification function
 from streamers import read_streamers_from_file # Import list reading functions
+from argparser import chackargs # Import arg check function
 
 def stream_open(streamer_login):
     global driver
@@ -136,11 +137,14 @@ if __name__ == "__main__":
     # Load environment variables from .env file
     load_dotenv()
 
+    # Get relevant launch arguments
+    skip_intro = chackargs()
+
     # Setup logging
     logging = setup_logging()
 
     # Load first time setup
-    first_time_setup()
+    first_time_setup(skip_intro)
 
     # Check base config        
     config = check_and_load_config()

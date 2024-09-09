@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 
 from streamers import read_streamers_from_file # Import list reading functions
 
-def first_time_setup():
+def first_time_setup(skip_intro):
     # Load environment variables from .env file
     load_dotenv()
 
@@ -23,12 +23,41 @@ def first_time_setup():
 
     # Step 1: Introduction
     if not os.path.exists(".env"):
-        print("Hi! Welcome to the Twitch Channel Point Farmer 2.0!")
-        time.sleep(2)
-        print("Let's set up the basics.")
-        time.sleep(2)
-        print()
-        print("First you will have to get the Twitch API credentials and place them in the .env file that will be created shortly. Once that is done you can restart the script to proceed with the setup!")
+        if not os.path.exists("fts.json"):
+            # Write the configuration dictionary to a JSON file
+            with open("fts.json", 'w') as file:
+                json.dump({}, file, indent=4)
+        with open("fts.json", 'r') as file:
+            fts_data = json.load(file)
+
+        if not skip_intro: 
+            print("Have you used this script before? (y/n)")
+            skip_intro = input()
+            if skip_intro == "y" or skip_intro == "yes":
+                skip_intro = True
+            elif skip_intro == "n" or skip_intro == "no":
+                skip_intro = False
+            else:
+                print("Invalid syntax. Defaulting to no.")
+                skip_intro = False
+        
+        skip_intro = {"skip_intro": skip_intro}
+        fts_data.update(skip_intro)
+        # Write the configuration dictionary to a JSON file
+        with open("fts.json", 'w') as file:
+            json.dump(fts_data, file, indent=4)
+
+        if not fts_data.get('skip_intro'):
+            print()
+            print("Hi! Welcome to the Twitch Channel Point Farmer 2.0!")
+            time.sleep(2)
+            print("Let's set up the basics.")
+            time.sleep(2)
+            print()
+            print("First you will have to get the Twitch API credentials and place them in the .env file that will be created shortly. Once that is done you can restart the script to proceed with the setup!")
+        else:
+            print()
+            print(".env file created! Please enter your Twitch API credentials.")
 
         check_env_vars(True)
     # Step 1: Fail condition
@@ -40,53 +69,78 @@ def first_time_setup():
 
     # Step 2: Streamer list
     if not os.path.exists(streamers_file):
-        print("Now that the Twithc API credentials are in place, let's create the streamer list.")
-        time.sleep(2)
-        print("You can add as many streamers to this list as you want, but keep in mind that the more streamers you add, the slower the program will get.")
-        time.sleep(2)
-        print("First, we need to name the list. By default, the name is 'streamers.txt', but you can name it whatever you want!")
-        time.sleep(2)
-        print()
+        if not os.path.exists("fts.json"):
+            # Write the configuration dictionary to a JSON file
+            with open("fts.json", 'w') as file:
+                json.dump({}, file, indent=4)
+        with open("fts.json", 'r') as file:
+            fts_data = json.load(file)
+
+        if not fts_data.get('skip_intro'):
+            print("Now that the Twithc API credentials are in place, let's create the streamer list.")
+            time.sleep(2)
+            print("You can add as many streamers to this list as you want, but keep in mind that the more streamers you add, the slower the program will get.")
+            time.sleep(2)
+            print("First, we need to name the list. By default, the name is 'streamers.txt', but you can name it whatever you want!")
+            time.sleep(2)
+            print()
+        
         print("What would you like to name the list? (streamers.txt)")
         streamers_file = input()
         if streamers_file == "":
             streamers_file = "streamers.txt"
 
-        fts_data = {
-            "streamers_file": streamers_file
-        }
-
+        streamers_file = {"streamers_file": streamers_file}
+        fts_data.update(streamers_file)
         # Write the configuration dictionary to a JSON file
         with open("fts.json", 'w') as file:
             json.dump(fts_data, file, indent=4)
 
         print()
-        print(f"Great! Now all you have to do is open {streamers_file} to add your favorite streamers! Restart the the script when you're ready to proceed with the setup!")
-        check_streamers_list(streamers_file, True)
+        if not fts_data.get('skip_intro'): 
+            print(f"Great! Now all you have to do is open {streamers_file.get('streamers_file')} to add your favorite streamers! Restart the the script when you're ready to proceed with the setup!")
+        else:
+            print(f"Open {streamers_file} to add your favorite streamers!")
+
+        check_streamers_list(streamers_file.get('streamers_file'), True)
 
     # Step 3: Config
     if not os.path.exists("config.json"):
-        print("This is the last step. Now we just have to set up the basic config.")
-        time.sleep(2)
-        print("You can change these settings at any time in the 'config.json' file.")
-        time.sleep(2)
+        if not os.path.exists("fts.json"):
+            # Write the configuration dictionary to a JSON file
+            with open("fts.json", 'w') as file:
+                json.dump({}, file, indent=4)
+        with open("fts.json", 'r') as file:
+            fts_data = json.load(file)
+
+        if not fts_data.get('skip_intro'):
+            print("This is the last step. Now we just have to set up the basic config.")
+            time.sleep(2)
+            print("You can change these settings at any time in the 'config.json' file.")
+            time.sleep(2)
 
         with open("fts.json", 'r') as file:
             fts_data = json.load(file)
 
-        minimum_check_interval = len(read_streamers_from_file(fts_data.get('streamers_file'))) * 5
+        if fts_data.get('streamers_file'):
+            streamers_file = fts_data.get('streamers_file')
+        else:
+            streamers_file = "streamers.txt"
+
+        minimum_check_interval = len(read_streamers_from_file(streamers_file)) * 5
         if minimum_check_interval > 15:
             default_check_interval = minimum_check_interval
         else:
             default_check_interval = 15
 
-        print()
-        print("First off, the check interval. This is the interval between each check in with Twitch to check if the streamers are live.")
-        time.sleep(2)
-        print("The absolute minimum for this interval is 15 seconds, but there is also a dynamic limit. For every streamer added in the list, 5 seconds are added to the dynamic limit.")
-        time.sleep(2)
-        print(f"Based of the current list ({streamers_file}), the minimum is {default_check_interval}.")
-        print()
+        if not fts_data.get('skip_intro'):
+            print()
+            print("First off, the check interval. This is the interval between each check in with Twitch to check if the streamers are live.")
+            time.sleep(2)
+            print("The absolute minimum for this interval is 15 seconds, but there is also a dynamic limit. For every streamer added in the list, 5 seconds are added to the dynamic limit.")
+            time.sleep(2)
+            print(f"Based of the current list ({streamers_file}), the minimum is {default_check_interval}.")
+            print()
         print(f"What would you like the check interval to be? ({default_check_interval}).")
 
         check_interval = input()
@@ -97,8 +151,9 @@ def first_time_setup():
             int(check_interval)
 
         print()
-        print("Alright. Next up is the max idle duration. This is the ammount of time in seconds of inactivity before the computer is considered 'idle'.")
-        time.sleep(2)
+        if not fts_data.get('skip_intro'):
+            print("Alright. Next up is the max idle duration. This is the ammount of time in seconds of inactivity before the computer is considered 'idle'.")
+            time.sleep(2)
         print("What would you like the max idle duration to be? (300)")
 
         max_idle_duration = input()
@@ -108,7 +163,10 @@ def first_time_setup():
             max_idle_duration = int(max_idle_duration)
 
         print()
-        print("Ok. Next up, do you want to enable notifications when the streamers go live while the computer is not idle? (y/n)")
+        if not fts_data.get('skip_intro'):
+            print("Ok. Next up, do you want to enable notifications when the streamers go live while the computer is not idle? (y/n)")
+        else:
+            print("Do you want to enable notifications when the streamers go live while the computer is not idle? (y/n)")
 
         notification = input()
         if notification == "y" or notification == "yes":
@@ -117,15 +175,17 @@ def first_time_setup():
             notification = False
         else:
             print("Invalid syntax. Defaulting to yes.")
+            print()
             notification = True
         
-        print()
-        print ("Ok. next up, autofarming. This allows the script to open up chrome and 'watch' the streams when the streamers are live and the computer is 'idle'.")
-        time.sleep(2)
-        print("This allows the script to 'farm' channel points while you're away. (for legal reasons, this is a joke. please don't ban me twitch.)")
-        time.sleep(2)
-        print("Without this, the script will not be farming any channel points.")
-        time.sleep(2)
+        if not fts_data.get('skip_intro'):
+            print()
+            print ("Ok. next up, autofarming. This allows the script to open up chrome and 'watch' the streams when the streamers are live and the computer is 'idle'.")
+            time.sleep(2)
+            print("This allows the script to 'farm' channel points while you're away. (for legal reasons, this is a joke. please don't ban me twitch.)")
+            time.sleep(2)
+            print("Without this, the script will not be farming any channel points.")
+            time.sleep(2)
         print("Do you wish to enable autofarming? (y/n)")
 
         autofarming = input()
@@ -135,6 +195,7 @@ def first_time_setup():
             autofarming = False
         else:
             print("Invalid syntax. Defaulting to yes.")
+            print()
             autofarming = True
     
         config_data = {
