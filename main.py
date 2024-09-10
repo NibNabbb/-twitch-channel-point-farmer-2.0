@@ -166,5 +166,8 @@ if __name__ == "__main__":
     driver = None
     first_time_run = True
 
+    # Script is ready
+    logging.info("Script is ready!")
+
     # Start the loop to check if the streamer is live
     check_stream_status()
