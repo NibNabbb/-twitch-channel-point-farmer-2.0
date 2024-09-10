@@ -4,3 +4,4 @@ logging
 selenium
 python-dotenv
 winotify
+argparse

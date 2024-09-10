@@ -13,6 +13,7 @@ from pfp import download_profile_image  # Import pfp download function
 from idle import check_idle_duration # Import idle detection functions
 from notification import send_notification # Import notification function
 from streamers import read_streamers_from_file # Import list reading functions
+from argparser import parseargs # Import arg check function
 
 def stream_open(streamer_login):
     global driver
@@ -136,11 +137,14 @@ if __name__ == "__main__":
     # Load environment variables from .env file
     load_dotenv()
 
+    # Get relevant launch arguments
+    skip_intro = parseargs()
+
     # Setup logging
     logging = setup_logging()
 
     # Load first time setup
-    first_time_setup()
+    first_time_setup(skip_intro)
 
     # Check base config        
     config = check_and_load_config()
@@ -161,6 +165,9 @@ if __name__ == "__main__":
     # Define global variables
     driver = None
     first_time_run = True
+
+    # Script is ready
+    logging.info("Script is ready!")
 
     # Start the loop to check if the streamer is live
     check_stream_status()
