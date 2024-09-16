@@ -47,6 +47,7 @@ def check_stream_status():
     next_check_time = time.time()
     live_streamers = []  # List of dictionaries containing streamer info
     recently_offline_streamers = []
+    external_closed_warning = False
 
     while True:
         current_time = time.time()
@@ -55,55 +56,78 @@ def check_stream_status():
         idle_duration = check_idle_duration()
 
         if current_time >= next_check_time:
-            # Read streamer names from "streamers.txt"
+            # Read streamer names from the streamer list
             streamers = read_streamers_from_file(config.get('active_list'))
 
+            # Loop through all streamers read from the streamer list
             for streamer_login in streamers:
+                # Checks if a streamer is live, and gets relevant stream data
                 streams_data = auth.get_live_streams(user_login=streamer_login)
 
+                # If a streamer is live
                 if streams_data and streams_data.get("data"):
                     # Get user info to download profile image
                     user_info = auth.get_users_info(user_login=streamer_login)
                     if user_info and user_info.get("data"):
                         download_profile_image(user_info['data'][0])
 
+                    # Some black magic to find out if the streamer is already known to be live
                     streamer_info = next((info for info in live_streamers if info['streamer_login'] == streamer_login), None)
 
+                    # If the streamer is known to be live, remove from recently offline streamers
                     if streamer_info in recently_offline_streamers:
                         recently_offline_streamers.remove(streamer_info)
 
+                    # If not already known to be live or not already open in managed browser window
                     if not streamer_info or not streamer_info['open_in_browser']:
+                        # Get the stream title
                         for stream in streams_data["data"]:
                             stream_title = stream['title']
                         
+                        # If not already known to be live, log that the streamer is now live
                         if not streamer_info in live_streamers:
                             logging.info(f"{streamer_login} is live!")
 
+                        # If the computer is considered "idle", and the streamer isn't already known to be live, and a browser tab has not already been opened
                         if idle_duration > config.get('max_idle_duration'):
-                            if streamer_info in live_streamers:
-                                live_streamers.remove(streamer_info)
-
                             if config.get('autofarming'):
+                                # Removing streamer from live streamers to re-add updated info later
+                                if streamer_info in live_streamers:
+                                    live_streamers.remove(streamer_info)
+
+                                # Open a managed browser window with tabs for each live streamer
                                 if not check_browser_open(driver):
                                     first_time_run = True
                                     driver = init_browser()
                                 current_window_handle = stream_open(streamer_login)
                                 live_streamers.append({'streamer_login': streamer_login, 'window_handle': current_window_handle, 'open_in_browser': True})
                         
+                        # If the computer is not considered "idle", and the streamer isn't already known to be live, or a notification has not been sent already
                         elif not streamer_info or not streamer_info['notification_sent']:
-                            if streamer_info in live_streamers:
-                                live_streamers.remove(streamer_info)
-
+                            # If notifications are enabled, send notification
                             if config.get('notification'):
+                                # Removing streamer from live streamers to re-add updated info later
+                                if streamer_info in live_streamers:
+                                    live_streamers.remove(streamer_info)
+
                                 # Send a non-intrusive notification to user
                                 send_notification(user_info['data'][0], stream_title)
 
                             live_streamers.append({'streamer_login': streamer_login, 'open_in_browser': False, 'notification_sent': True})
 
+                    # If already known to be live or already open in managed browser window
                     else:
                         stream_window = next((info['window_handle'] for info in live_streamers if info['streamer_login'] == streamer_login), None)
-                        driver.switch_to.window(stream_window)
 
+                        # Switch to streamer tab in managed browser
+                        if check_browser_open(driver):
+                            driver.switch_to.window(stream_window)
+                        else:
+                            if not external_closed_warning:
+                                logging.warning("Browser has been closed externally!")
+                                external_closed_warning = True
+
+                # If a streamer is not live
                 else:
                     streamer_info = next((info for info in live_streamers if info['streamer_login'] == streamer_login), None)
 
