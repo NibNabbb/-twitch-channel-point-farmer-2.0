@@ -8,11 +8,13 @@ def send_notification(user_info, stream_title):
 
     image_path = os.path.abspath(f"pfp/profile_image_{streamer_login}.png")
     
-    toast = Notification(app_id="Twitch Channel Point Farmer",
+    toast = Notification(app_id="Twitch Channel Point Farmer 2.0",
                     title=f"{streamer_name} is live! Go farm some points!",
                     msg=f"{stream_title}",
                     duration="short",
-                    icon=image_path)
+                    icon=image_path,
+                    launch=f"https://twitch.tv/{streamer_login}"
+                    )
     toast.show()
 
     logging.info("Notification sent!")

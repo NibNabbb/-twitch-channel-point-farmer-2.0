@@ -242,11 +242,12 @@ def first_time_setup(skip_intro):
         with open(("config.json"), 'w') as file:
             json.dump(config_data, file, indent=4)
         
-        os.remove("fts.json")
-
         print("That's it! The script is now ready!")
         logging.info("First time setup complete!")
         time.sleep(2)
+
+    if os.path.exists("fts.json"):
+        os.remove("fts.json")
 
     # Load up the most recent config
     with open("config.json", 'r') as file:
