@@ -68,7 +68,7 @@ def check_stream_status():
                 if streams_data and streams_data.get("data"):
                     # Get user info to download profile image
                     user_info = auth.get_users_info(user_login=streamer_login)
-                    if user_info and user_info.get("data"):
+                    if config.get('notification') and user_info and user_info.get("data"):
                         download_profile_image(user_info['data'][0])
 
                     # Some black magic to find out if the streamer is already known to be live
